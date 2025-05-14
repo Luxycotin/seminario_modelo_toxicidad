@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Clasificador de Toxicidad</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/toxicity@1.2.2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+    }
+    input, textarea, button {
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .resultado {
+      margin-top: 20px;
+      background: #f4f4f4;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    .positivo {
+      color: red;
+      font-weight: bold;
+    }
+    .negativo {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Clasificación de Toxicidad</h1>
+  <p>Escribe una frase y analiza si contiene toxicidad, insultos, amenazas, etc.</p>
+
+  <textarea id="texto" rows="3" placeholder="Escriba su frase aquí"></textarea>
+  <button onclick="analizar()">Analizar texto</button>
+
+  <div id="resultados" class="resultado"></div>
+
+  <script>
+    const threshold = 0.5;
+    let modelo;
+
+    toxicity.load(threshold).then(m => {
+      modelo = m;
+      document.getElementById('resultados').innerHTML = "El modelo se ha cargado correctamente, escribí una frase para probarlo";
+    });
+
+    async function analizar() {
+      const texto = document.getElementById('texto').value.trim();
+      const output = document.getElementById('resultados');
+
+      if (!texto) {
+        output.innerHTML = "Por favor escribe una frase.";
+        return;
+      }
+
+      output.innerHTML = "Estamos analizando...";
+
+      try {
+        const predicciones = await modelo.classify([texto]);
+        let resultadoHTML = `<h3>Resultado para: "${texto}"</h3><ul>`;
+
+        predicciones.forEach(pred => {
+          const prob = pred.results[0].probabilities[1];
+          const esToxico = pred.results[0].match;
+
+          resultadoHTML += `<li><strong>${pred.label}</strong>: 
+            ${(prob * 100).toFixed(2)}% 
+            <span class="${esToxico ? 'positivo' : 'negativo'}">
+              (${esToxico ? 'Sí se detectó' : 'No se detectó'})
+            </span>
+          </li>`;
+        });
+
+        resultadoHTML += '</ul>';
+        output.innerHTML = resultadoHTML;
+
+      } catch (error) {
+        console.error(error);
+        output.innerHTML = "Hubo un error al analizar el texto.";
+      }
+    }
+  </script>
+
+</body>
+</html>
